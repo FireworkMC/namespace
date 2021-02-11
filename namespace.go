@@ -8,7 +8,7 @@ import (
 
 //DefaultNamespace this is the namespace used for minecraft items/effects ect.
 //Plugins should use their own namespace if they aren't overriding vanila features
-var DefaultNamespace Namespace = MustGetNamespace("minecraft")
+var DefaultNamespace Namespace = MustNamespace("minecraft")
 
 var namespaceMap, namespacedKeyMap sync.Map
 
@@ -62,8 +62,8 @@ func GetNamespacedKey(s string) (NamespacedKey, error) {
 	return key, err
 }
 
-//MustGetNamespace gets or creates the given namespace. This panics if the given namespace is not valid
-func MustGetNamespace(s string) Namespace {
+//MustNamespace gets or creates the given namespace. This panics if the given namespace is not valid
+func MustNamespace(s string) Namespace {
 	ns, err := GetNamespace(s)
 	if err != nil {
 		panic(err)
@@ -71,9 +71,9 @@ func MustGetNamespace(s string) Namespace {
 	return ns
 }
 
-//MustGetNamespacedKey gets the namespaced key for the give string.
+//MustNamespacedKey gets the namespaced key for the give string.
 //panics if the given key is invalid.
-func MustGetNamespacedKey(s string) NamespacedKey {
+func MustNamespacedKey(s string) NamespacedKey {
 	key, err := GetNamespacedKey(s)
 	if err != nil {
 		panic(err)
