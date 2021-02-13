@@ -18,7 +18,6 @@ type Namespace interface {
 	String() string
 
 	Key(s string) (NamespacedKey, error)
-	MustKey(s string) NamespacedKey
 
 	namespace() *namespace
 }
@@ -29,6 +28,7 @@ type NamespacedKey interface {
 	Namespace() Namespace
 	//Key get the key
 	Key() string
+
 	String() string
 
 	namespacedKey() *namespacedKey
@@ -36,30 +36,42 @@ type NamespacedKey interface {
 
 //GetNamespace gets the namespace or creates a new namespace if it does not exist.
 func GetNamespace(s string) (Namespace, error) {
-	s = strings.ToLower(s)
-	if len(strings.TrimSpace(s)) == 0 || !isValidNamespace(s) {
-		return nil, fmt.Errorf("Invalid namespace: '" + s + "'")
+	r, ok := namespaceMap.Load(s)
+	if !ok {
+		s = strings.TrimSpace(strings.ToLower(s))
+		if len(s) == 0 || !IsValidNamespace(s) {
+			return nil, fmt.Errorf("Invalid namespace: '" + s + "'")
+		}
+		r, _ = namespaceMap.LoadOrStore(s, &namespace{name: s})
 	}
 
-	r, _ := namespaceMap.LoadOrStore(s, &namespace{name: s})
 	return r.(*namespace), nil
 }
 
 //GetNamespacedKey get the given string
 func GetNamespacedKey(s string) (NamespacedKey, error) {
-	s = strings.ToLower(strings.TrimSpace(s))
-	v := strings.Split(s, ":")
-	if len(v) != 2 {
-		return nil, fmt.Errorf("namespace: NamespacedKeyFor:Invalid string provided")
-	}
-	namespace, err := GetNamespace(v[0])
-	if err != nil {
-		return nil, err
+	ns, ok := ParseNamespacedKey(s)
+	if !ok {
+		return nil, fmt.Errorf("namespace: NamespacedKeyFor: Invalid string provided")
 	}
 
-	key, err := namespace.Key(v[1])
+	var r interface{}
 
-	return key, err
+	if r, ok = namespacedKeyMap.Load(ns); !ok {
+
+		if r, ok = namespaceMap.Load(ns[0]); !ok {
+			r, _ = namespaceMap.LoadOrStore(ns[0], &namespace{name: ns[0]})
+		}
+
+		namespace := r.(Namespace)
+
+		if r, ok = namespacedKeyMap.Load(ns); !ok {
+			v := &namespacedKey{namespace: namespace.namespace(), key: ns[1]}
+			r, _ = namespacedKeyMap.LoadOrStore(ns, v)
+		}
+	}
+
+	return r.(*namespacedKey), nil
 }
 
 //MustNamespace gets or creates the given namespace. This panics if the given namespace is not valid
