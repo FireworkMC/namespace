@@ -17,13 +17,14 @@ type Namespace interface {
 	//String gets the namespace name
 	String() string
 
-	Key(s string) (NamespacedKey, error)
+	Key(s string) (Key, error)
+	MustKey(s string) Key
 
 	namespace() *namespace
 }
 
-//NamespacedKey a namespaced key
-type NamespacedKey interface {
+//Key a namespaced key
+type Key interface {
 	//Namespace gets the current namespace
 	Namespace() Namespace
 	//Key get the key
@@ -48,8 +49,8 @@ func GetNamespace(s string) (Namespace, error) {
 	return r.(*namespace), nil
 }
 
-//GetNamespacedKey get the given string
-func GetNamespacedKey(s string) (NamespacedKey, error) {
+//GetKey get the given string
+func GetKey(s string) (Key, error) {
 	ns, ok := ParseNamespacedKey(s)
 	if !ok {
 		return nil, fmt.Errorf("namespace: NamespacedKeyFor: Invalid string provided")
@@ -83,10 +84,10 @@ func MustNamespace(s string) Namespace {
 	return ns
 }
 
-//MustNamespacedKey gets the namespaced key for the give string.
+//MustKey gets the namespaced key for the give string.
 //panics if the given key is invalid.
-func MustNamespacedKey(s string) NamespacedKey {
-	key, err := GetNamespacedKey(s)
+func MustKey(s string) Key {
+	key, err := GetKey(s)
 	if err != nil {
 		panic(err)
 	}

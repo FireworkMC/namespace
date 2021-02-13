@@ -6,7 +6,9 @@ type namespace struct {
 
 func (n *namespace) String() string { return n.name }
 
-func (n *namespace) Key(k string) (NamespacedKey, error) { return GetNamespacedKey(k) }
+func (n *namespace) Key(k string) (Key, error) { return GetKey(k) }
+
+func (n *namespace) MustKey(k string) Key { return MustKey(k) }
 
 func (n *namespace) namespace() *namespace { return n }
 
