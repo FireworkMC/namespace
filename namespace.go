@@ -67,7 +67,7 @@ func GetKey(s string) (Key, error) {
 		namespace := r.(Namespace)
 
 		if r, ok = namespacedKeyMap.Load(ns); !ok {
-			v := &namespacedKey{namespace: namespace.namespace(), key: ns[1]}
+			v := &namespacedKey{namespace: namespace.namespace(), key: ns[1], full: namespace.namespace().name + ":" + ns[1]}
 			r, _ = namespacedKeyMap.LoadOrStore(ns, v)
 		}
 	}

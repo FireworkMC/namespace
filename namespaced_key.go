@@ -15,9 +15,10 @@ func (n *namespace) namespace() *namespace { return n }
 type namespacedKey struct {
 	namespace *namespace
 	key       string
+	full      string
 }
 
-func (n *namespacedKey) String() string { return n.namespace.name + ":" + n.key }
+func (n *namespacedKey) String() string { return n.full }
 
 func (n *namespacedKey) Namespace() Namespace { return n.namespace }
 
