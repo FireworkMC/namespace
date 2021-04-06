@@ -32,6 +32,8 @@ type Key interface {
 
 	String() string
 
+	Valid() bool
+
 	namespacedKey() *namespacedKey
 }
 
@@ -67,7 +69,7 @@ func GetKey(s string) (Key, error) {
 		namespace := r.(Namespace)
 
 		if r, ok = namespacedKeyMap.Load(ns); !ok {
-			v := &namespacedKey{namespace: namespace.namespace(), key: ns[1], full: namespace.namespace().name + ":" + ns[1]}
+			v := &namespacedKey{namespace: namespace.namespace(), key: ns[1], full: namespace.namespace().name + ":" + ns[1], valid: true}
 			r, _ = namespacedKeyMap.LoadOrStore(ns, v)
 		}
 	}
