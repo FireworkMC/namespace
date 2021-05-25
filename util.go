@@ -23,7 +23,7 @@ func ParseNamespacedKey(s string) (nsk [2]string, valid bool) {
 		v[i] = w
 	}
 
-	if !IsValidNamespace(v[0]) || !IsValidNamespacedKey(v[1]) {
+	if !IsValidNamespace(v[0]) || !IsValidKey(v[1]) {
 		return
 	}
 
@@ -41,8 +41,8 @@ func IsValidNamespace(s string) bool {
 	return true
 }
 
-//IsValidNamespacedKey returns if the namespaced key is valid
-func IsValidNamespacedKey(s string) bool {
+//IsValidKey returns if the namespaced key is valid
+func IsValidKey(s string) bool {
 	for _, b := range []rune(s) {
 		if !(unicode.IsLower(b) || unicode.IsDigit(b) || b == '-' || b == '_' || b == '/' || b == '.') {
 			return false
