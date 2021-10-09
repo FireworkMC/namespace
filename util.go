@@ -5,9 +5,9 @@ import (
 	"unicode"
 )
 
-//See https://www.minecraft.net/en-us/article/minecraft-snapshot-17w43a
+// See https://www.minecraft.net/en-us/article/minecraft-snapshot-17w43a
 
-//ParseNamespacedKey parse the given namespaced key
+// ParseNamespacedKey parse the given namespaced key
 func ParseNamespacedKey(s string) (nsk [2]string, valid bool) {
 	v := strings.Split(strings.ToLower(s), ":")
 
@@ -31,7 +31,7 @@ func ParseNamespacedKey(s string) (nsk [2]string, valid bool) {
 
 }
 
-//IsValidNamespace returns if the given namspace is valid
+// IsValidNamespace returns if the given namspace is valid
 func IsValidNamespace(s string) bool {
 	for _, b := range []rune(s) {
 		if !(unicode.IsLower(b) || unicode.IsDigit(b) || b == '-' || b == '_') {
@@ -41,7 +41,7 @@ func IsValidNamespace(s string) bool {
 	return true
 }
 
-//IsValidKey returns if the namespaced key is valid
+// IsValidKey returns if the namespaced key is valid
 func IsValidKey(s string) bool {
 	for _, b := range []rune(s) {
 		if !(unicode.IsLower(b) || unicode.IsDigit(b) || b == '-' || b == '_' || b == '/' || b == '.') {
