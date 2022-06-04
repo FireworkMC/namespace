@@ -3,7 +3,7 @@ package namespace
 import (
 	"testing"
 
-	"github.com/yehan2002/is"
+	"github.com/yehan2002/is/v2"
 )
 
 type namespaceTest struct{}

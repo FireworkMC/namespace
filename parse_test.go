@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yehan2002/is"
+	"github.com/yehan2002/is/v2"
 )
 
 type simpleKeyTest struct{}
