@@ -1,27 +1,27 @@
 package namespace
 
-type namespace struct {
+type ns struct {
 	name string
-	keys *syncMap[string, *key]
+	keys *syncMap[string, *nsk]
 }
 
-func newNamespace(n string) *namespace {
-	ns := &namespace{name: n, keys: &syncMap[string, *key]{v: map[string]*key{}}}
-	ns.keys.New = func(k string) *key {
-		return &key{ns: ns, key: k, full: ns.name + ":" + k}
+func newNamespace(n string) *ns {
+	ns := &ns{name: n, keys: &syncMap[string, *nsk]{v: map[string]*nsk{}}}
+	ns.keys.New = func(k string) *nsk {
+		return &nsk{ns: ns, key: k, full: ns.name + ":" + k}
 	}
 
 	return ns
 }
 
-func (n *namespace) String() string { return n.name }
+func (n *ns) String() string { return n.name }
 
-func (n *namespace) Key(k string) NSK {
+func (n *ns) Key(k string) NSK {
 	_, k, _ = parseNSK(k, false, true, false)
 	return n.keys.Get(k)
 }
 
-func (n *namespace) ParseKey(k string) (nsk NSK, err error) {
+func (n *ns) ParseKey(k string) (nsk NSK, err error) {
 	_, k, err = parseNSK(k, true, true, false)
 	if err != nil {
 		return nil, err
@@ -29,13 +29,13 @@ func (n *namespace) ParseKey(k string) (nsk NSK, err error) {
 	return n.keys.Get(k), nil
 }
 
-type key struct {
-	ns        *namespace
+type nsk struct {
+	ns        *ns
 	key, full string
 }
 
-func (n *key) Namespace() NS { return n.ns }
+func (n *nsk) Namespace() NS { return n.ns }
 
-func (n *key) String() string { return n.full }
+func (n *nsk) String() string { return n.full }
 
-func (n *key) Key() string { return n.key }
+func (n *nsk) Key() string { return n.key }

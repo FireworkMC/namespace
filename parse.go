@@ -9,7 +9,7 @@ import (
 const maxLength = 200
 const defaultNamespace = "minecraft"
 
-var translate = func() (table [unicode.MaxASCII + 1]rune) {
+var translate [unicode.MaxASCII + 1]rune = func() (table [unicode.MaxASCII + 1]rune) {
 	for i := rune(0); i <= unicode.MaxASCII; i++ {
 		switch {
 		case unicode.IsLower(i),
@@ -31,18 +31,32 @@ var translate = func() (table [unicode.MaxASCII + 1]rune) {
 // If noSeparator if set, this parses the string as a key without a namespace.
 // If nsOnly is also set, the string is parsed as a namespace without a key.
 // If strict is set, this makes no attempt to correct the nsk and returns at the first
-// error it encounters. If strict is false, this never returns an error.
+// error it encounters. If strict is false, this never returns an error unless the string is longer
+// than [maxLength] or ends with a trailing ':' character.
 func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err error) {
 	var sep int
 	var invalid bool
 
+	if len(v) > maxLength {
+	}
+
+	if l := len(v); l == 0 {
+		// return default namespace for empty string if we only need a namespace
+		if nsOnly {
+			return defaultNamespace, "", nil
+		}
+
+		return "", "", ErrEmpty
+
+	} else if l > maxLength {
+		return "", "", ErrTooLong
+	} else if v[l-1] == ':' {
+		return "", "", ErrTrailingSep
+	}
+
 	// there can be no separator if nsOnly is set
 	if !noSeparator && nsOnly {
 		noSeparator = true
-	}
-
-	if strict && len(v) > maxLength {
-		return "", "", ErrTooLong
 	}
 
 	// fast path. iterates over each character in the string without modifying it.
@@ -138,8 +152,8 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 		}
 
 		// this only happens when a string that ends with `:` is given.
-		return strings.TrimSuffix(v, ":"), "", ErrTrailingSep
-
+		// we already checked this at the start, so this should be unreachable.
+		return "", "", ErrTrailingSep
 	}
 
 	if nsOnly {

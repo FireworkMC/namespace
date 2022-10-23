@@ -1,6 +1,8 @@
 package namespace
 
-import "github.com/yehan2002/errors"
+import (
+	"github.com/yehan2002/errors"
+)
 
 // See https://www.minecraft.net/en-us/article/minecraft-snapshot-17w43a
 
@@ -9,6 +11,8 @@ import "github.com/yehan2002/errors"
 var Default NS = Namespace("minecraft")
 
 const (
+	// ErrEmpty the namespaced key is empty.
+	ErrEmpty = errors.Const("namespace: namespaced key is empty")
 	// ErrTooLong the namespaced key exceeded the max allowed length.
 	ErrTooLong = errors.Const("namespace: namespaced key is too long")
 	// ErrInvalidChar the namespaced key contained an invalid character
@@ -17,8 +21,8 @@ const (
 	ErrTrailingSep = errors.Const("namespace: namespace contains trailing ':' character")
 )
 
-var namespaces = syncMap[string, *namespace]{
-	v:   map[string]*namespace{},
+var namespaces = syncMap[string, *ns]{
+	v:   map[string]*ns{},
 	New: newNamespace,
 }
 

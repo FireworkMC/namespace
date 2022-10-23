@@ -37,7 +37,12 @@ func (s *simpleKeyTest) TestParse(is is.Is) {
 	test("aa/aa", false, false, false, "minecraft", "aa/aa", nil)
 	test("a/a:b", false, false, false, "a_a", "b", nil)
 
-	test("aa:", false, false, false, "aa", "", ErrTrailingSep)
+	test("aa:", false, false, false, "", "", ErrTrailingSep)
+	test("aa:", true, false, false, "", "", ErrTrailingSep)
+
+	test("", true, false, false, "", "", ErrEmpty)
+	test("", true, false, true, defaultNamespace, "", nil)
+
 	test("a/a:a", true, false, false, "", "", ErrInvalidChar)
 	test(strings.Repeat("a", maxLength+1), true, false, false, "", "", ErrTooLong)
 }
