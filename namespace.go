@@ -56,16 +56,16 @@ type ns struct {
 }
 
 // Equal returns if `n` is equal to `n2`
-func (n *NS) Equal(n2 NS) bool { return n.ns == n2.ns }
+func (n NS) Equal(n2 NS) bool { return n.ns == n2.ns }
 
 // IsNil returns if this nsk is nil.
 // if this returns true, calling [NS.Key] will panic.
-func (n *NS) IsNil() bool { return n.ns == nil }
+func (n NS) IsNil() bool { return n.ns == nil }
 
 // Key creates a new key inside this namespace.
 // This panics if the length of the key is larger than `maxLength`.
 // If [NS.IsNil] returns true, this will panic.
-func (n *NS) Key(k string) NSK {
+func (n NS) Key(k string) NSK {
 	if n.ns == nil {
 		panic(ErrNil)
 	}
@@ -76,7 +76,7 @@ func (n *NS) Key(k string) NSK {
 
 // ParseKey parses the given string and returns a key if it is a valid key.
 // If the namespace is nil, the default namespace will be used.
-func (n *NS) ParseKey(k string) (nsk NSK, err error) {
+func (n NS) ParseKey(k string) (nsk NSK, err error) {
 	if n.ns == nil {
 		return NSK{}, ErrNil
 	}
@@ -98,7 +98,7 @@ func (n *NS) UnmarshalText(text []byte) (err error) {
 	return
 }
 
-func (n *NS) String() string {
+func (n NS) String() string {
 	if n.ns == nil {
 		return ""
 	}
@@ -116,15 +116,15 @@ type nsk struct {
 }
 
 // Equal returns if `n` is equal to `n2`
-func (n *NSK) Equal(n2 NSK) bool { return n.nsk == n2.nsk }
+func (n NSK) Equal(n2 NSK) bool { return n.nsk == n2.nsk }
 
 // IsNil returns if this nsk is nil.
 // if this returns true, calling [NSK.Namespace] will panic.
-func (n *NSK) IsNil() bool { return n.nsk == nil }
+func (n NSK) IsNil() bool { return n.nsk == nil }
 
 // Namespace gets the namespace for this key.
 // If [NSK.IsNil] returns true, this will panic.
-func (n *NSK) Namespace() NS {
+func (n NSK) Namespace() NS {
 	if n.nsk == nil {
 		panic(ErrNil)
 	}
@@ -133,7 +133,7 @@ func (n *NSK) Namespace() NS {
 }
 
 // Key gets the key part of the namespaced key (the part after the ':')
-func (n *NSK) Key() string {
+func (n NSK) Key() string {
 	if n.nsk == nil {
 		return ""
 	}
@@ -150,7 +150,7 @@ func (n *NSK) UnmarshalText(text []byte) (err error) {
 	return
 }
 
-func (n *NSK) String() string {
+func (n NSK) String() string {
 	if n.nsk == nil {
 		return ""
 	}
