@@ -7,4 +7,4 @@ require (
 	github.com/yehan2002/is/v2 v2.2.3
 )
 
-require github.com/go-test/deep v1.0.7 // indirect
+require github.com/go-test/deep v1.0.8 // indirect

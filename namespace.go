@@ -1,6 +1,9 @@
 package namespace
 
 import (
+	"encoding"
+	"fmt"
+
 	"github.com/yehan2002/errors"
 )
 
@@ -21,29 +24,133 @@ const (
 	ErrTrailingSep = errors.Const("namespace: namespace contains trailing ':' character")
 )
 
+var (
+	_ encoding.TextMarshaler   = (*NS)(nil)
+	_ encoding.TextUnmarshaler = (*NS)(nil)
+	_ encoding.TextMarshaler   = (*NSK)(nil)
+	_ encoding.TextUnmarshaler = (*NSK)(nil)
+)
+
 var namespaces = syncMap[string, *ns]{
-	v:   map[string]*ns{},
-	New: newNamespace,
+	v: map[string]*ns{},
+
+	New: func(n string) *ns {
+		ns := &ns{name: n, keys: &syncMap[string, *nsk]{v: map[string]*nsk{}}}
+		ns.keys.New = func(k string) *nsk {
+			return &nsk{ns: NS{ns}, key: k, full: ns.name + ":" + k}
+		}
+
+		return ns
+	},
 }
 
 // NS a namespace.
-type NS interface {
-	// String gets the namespace as a string
-	String() string
+// To compare namespaces use `==` operator directly (not on the pointer value) or use the Equal method.
+type NS struct{ ns *ns }
 
-	// Key creates a new key inside this namespace.
-	// This panics if the length of the key is larger than `maxLength`
-	Key(k string) NSK
+type ns struct {
+	name string
+	keys *syncMap[string, *nsk]
+}
 
-	// ParseKey parses the given string and returns a key if it is a valid key.
-	ParseKey(k string) (key NSK, err error)
+// Equal returns if `n` is equal to `n2`
+func (n *NS) Equal(n2 NS) bool { return n.ns == n2.ns }
+
+// IsNil returns if this nsk is nil.
+// if this returns true, calling Key will panic.
+func (n *NS) IsNil() bool { return n.ns == nil }
+
+// Key creates a new key inside this namespace.
+// This panics if the length of the key is larger than `maxLength`
+func (n *NS) Key(k string) NSK {
+	if n.ns == nil {
+		panic(fmt.Errorf("tried to create key in nil namespace"))
+	}
+
+	_, k, _ = parseNSK(k, false, true, false)
+	return NSK{n.ns.keys.Get(k)}
+}
+
+// ParseKey parses the given string and returns a key if it is a valid key.
+// If the namespace is nil, the default namespace will be used.
+func (n *NS) ParseKey(k string) (nsk NSK, err error) {
+	if n.ns == nil {
+		return NSK{}, fmt.Errorf("tried to create key in nil namespace")
+	}
+
+	_, k, err = parseNSK(k, true, true, false)
+	if err != nil {
+		return NSK{}, err
+	}
+
+	return NSK{n.ns.keys.Get(k)}, nil
+}
+
+// MarshalText implements encoding.TextMarshaler
+func (n *NS) MarshalText() (text []byte, err error) { return []byte(n.String()), nil }
+
+// UnmarshalText implements encoding.TextUnmarshaler
+func (n *NS) UnmarshalText(text []byte) (err error) {
+	*n, err = ParseNamespace(string(text))
+	return
+}
+
+func (n *NS) String() string {
+	if n.ns == nil {
+		return ""
+	}
+
+	return n.ns.name
 }
 
 // NSK a namespaced key
-type NSK interface {
-	Namespace() NS
-	String() string
-	Key() string
+// To compare namespaces use `==` operator directly (not on the pointer value) or use the Equal method.
+type NSK struct{ nsk *nsk }
+
+type nsk struct {
+	ns        NS
+	key, full string
+}
+
+// Equal returns if `n` is equal to `n2`
+func (n *NSK) Equal(n2 NSK) bool { return n.nsk == n2.nsk }
+
+// IsNil returns if this nsk is nil.
+// if this returns true, calling Namespace will panic.
+func (n *NSK) IsNil() bool { return n.nsk == nil }
+
+// Namespace gets the namespace for this key.
+func (n *NSK) Namespace() NS {
+	if n.nsk == nil {
+		panic("Tried to get namespace for nil key")
+	}
+
+	return n.nsk.ns
+}
+
+// Key gets the key part of the namespaced key (the part after the ':')
+func (n *NSK) Key() string {
+	if n.nsk == nil {
+		return ""
+	}
+
+	return n.nsk.key
+}
+
+// MarshalText implements encoding.TextMarshaler
+func (n *NSK) MarshalText() (text []byte, err error) { return []byte(n.String()), nil }
+
+// UnmarshalText implements encoding.TextUnmarshaler
+func (n *NSK) UnmarshalText(text []byte) (err error) {
+	*n, err = ParseKey(string(text))
+	return
+}
+
+func (n *NSK) String() string {
+	if n.nsk == nil {
+		return ""
+	}
+	return n.nsk.full
 }
 
 // Namespace creates a new namespace from the given string.
@@ -53,17 +160,17 @@ func Namespace(v string) NS {
 	if err != nil {
 		panic(err)
 	}
-	return namespaces.Get(ns)
+	return NS{namespaces.Get(ns)}
 }
 
 // ParseNamespace creates a new namespace
 func ParseNamespace(v string) (NS, error) {
 	ns, _, err := parseNSK(v, true, true, true)
 	if err != nil {
-		return nil, err
+		return NS{}, err
 	}
 
-	return namespaces.Get(ns), nil
+	return NS{namespaces.Get(ns)}, nil
 }
 
 // Key creates a new key.
@@ -73,14 +180,14 @@ func Key(v string) NSK {
 	if err != nil {
 		panic(err)
 	}
-	return namespaces.Get(ns).keys.Get(k)
+	return NSK{namespaces.Get(ns).keys.Get(k)}
 }
 
 // ParseKey parses a key
 func ParseKey(v string) (NSK, error) {
 	ns, k, err := parseNSK(v, true, false, false)
 	if err != nil {
-		return nil, err
+		return NSK{}, err
 	}
-	return namespaces.Get(ns).keys.Get(k), nil
+	return NSK{namespaces.Get(ns).keys.Get(k)}, nil
 }
