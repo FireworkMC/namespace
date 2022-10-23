@@ -2,7 +2,6 @@ package namespace
 
 import (
 	"encoding"
-	"fmt"
 
 	"github.com/yehan2002/errors"
 )
@@ -16,6 +15,9 @@ var Default NS = Namespace("minecraft")
 const (
 	// ErrEmpty the namespaced key is empty.
 	ErrEmpty = errors.Const("namespace: namespaced key is empty")
+	// ErrNil the namespace or key is nil.
+	// This is returned by methods on the zero value of [NS] or [NSK]
+	ErrNil = errors.Const("namespace: nil namespace or key")
 	// ErrTooLong the namespaced key exceeded the max allowed length.
 	ErrTooLong = errors.Const("namespace: namespaced key is too long")
 	// ErrInvalidChar the namespaced key contained an invalid character
@@ -57,14 +59,15 @@ type ns struct {
 func (n *NS) Equal(n2 NS) bool { return n.ns == n2.ns }
 
 // IsNil returns if this nsk is nil.
-// if this returns true, calling Key will panic.
+// if this returns true, calling [NS.Key] will panic.
 func (n *NS) IsNil() bool { return n.ns == nil }
 
 // Key creates a new key inside this namespace.
-// This panics if the length of the key is larger than `maxLength`
+// This panics if the length of the key is larger than `maxLength`.
+// If [NS.IsNil] returns true, this will panic.
 func (n *NS) Key(k string) NSK {
 	if n.ns == nil {
-		panic(fmt.Errorf("tried to create key in nil namespace"))
+		panic(ErrNil)
 	}
 
 	_, k, _ = parseNSK(k, false, true, false)
@@ -75,7 +78,7 @@ func (n *NS) Key(k string) NSK {
 // If the namespace is nil, the default namespace will be used.
 func (n *NS) ParseKey(k string) (nsk NSK, err error) {
 	if n.ns == nil {
-		return NSK{}, fmt.Errorf("tried to create key in nil namespace")
+		return NSK{}, ErrNil
 	}
 
 	_, k, err = parseNSK(k, true, true, false)
@@ -116,13 +119,14 @@ type nsk struct {
 func (n *NSK) Equal(n2 NSK) bool { return n.nsk == n2.nsk }
 
 // IsNil returns if this nsk is nil.
-// if this returns true, calling Namespace will panic.
+// if this returns true, calling [NSK.Namespace] will panic.
 func (n *NSK) IsNil() bool { return n.nsk == nil }
 
 // Namespace gets the namespace for this key.
+// If [NSK.IsNil] returns true, this will panic.
 func (n *NSK) Namespace() NS {
 	if n.nsk == nil {
-		panic("Tried to get namespace for nil key")
+		panic(ErrNil)
 	}
 
 	return n.nsk.ns
