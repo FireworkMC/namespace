@@ -47,8 +47,12 @@ type NSK interface {
 }
 
 // Namespace creates a new namespace from the given string.
+// This panics if `v` is longer than 200 characters.
 func Namespace(v string) NS {
-	ns, _, _ := parseNSK(v, false, true, true)
+	ns, _, err := parseNSK(v, false, true, true)
+	if err != nil {
+		panic(err)
+	}
 	return namespaces.Get(ns)
 }
 
@@ -62,9 +66,13 @@ func ParseNamespace(v string) (NS, error) {
 	return namespaces.Get(ns), nil
 }
 
-// Key creates a new key
+// Key creates a new key.
+// This panics if len(v) > 200 or len(v) == 0.
 func Key(v string) NSK {
-	ns, k, _ := parseNSK(v, false, false, false)
+	ns, k, err := parseNSK(v, false, false, false)
+	if err != nil {
+		panic(err)
+	}
 	return namespaces.Get(ns).keys.Get(k)
 }
 
