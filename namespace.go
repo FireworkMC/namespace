@@ -47,6 +47,7 @@ var namespaces = syncMap[string, *ns]{
 }
 
 // NS a namespace.
+// A namespace can only contain digits, lowercase letters, underscores and hyphens.
 // To compare namespaces use `==` operator directly (not on the pointer value) or use the Equal method.
 type NS struct{ ns *ns }
 
@@ -106,7 +107,8 @@ func (n NS) String() string {
 	return n.ns.name
 }
 
-// NSK a namespaced key
+// NSK a namespaced key.
+// A namespace can only contain digits, lowercase letters, underscores, hyphens, forward slash and dots.
 // To compare namespaces use `==` operator directly (not on the pointer value) or use the Equal method.
 type NSK struct{ nsk *nsk }
 

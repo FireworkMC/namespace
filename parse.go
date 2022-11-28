@@ -73,17 +73,17 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 			continue
 		}
 
-		// the `/` character is only allowed in the key.
-		if char == '/' {
+		// the `/` and `.` characters are only allowed in the key.
+		if char == '/' || char == '.' {
 			if sep != 0 || (noSeparator && !nsOnly) {
 				continue
 			}
 
 			if !noSeparator && sep == 0 {
 				// check if the key contains a separator.
-				// we do this to insure bare keys that have `/` are parsed correctly.
+				// we do this to insure bare keys that have `/` or `.` are parsed correctly.
 				noSeparator = strings.IndexByte(v[i:], ':') == -1
-				// the string has no separator, we are parsing a key so `/` is allowed
+				// the string has no separator, we are parsing a key so `/` or `.` is allowed
 				if noSeparator {
 					continue
 				}
@@ -128,12 +128,12 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 						sep = i + start
 					}
 
-				case '/':
+				case '/', '.':
 					replaced = '_'
 
 					// `/` is allowed in keys
 					if sep != 0 || noSeparator && !nsOnly {
-						replaced = '/'
+						replaced = char
 					}
 
 				default:

@@ -23,6 +23,7 @@ func (s *simpleKeyTest) TestParse(is is.Is) {
 
 	test("minecraft:air", false, false, false, "minecraft", "air", nil)
 	test("minecraft:blocks/air", false, false, false, "minecraft", "blocks/air", nil)
+	test("minecraft:blocks/air.2", false, false, false, "minecraft", "blocks/air.2", nil)
 	test("minecraft:AIR", false, false, false, "minecraft", "air", nil)
 	test("abc:;;;123", false, false, false, "abc", "___123", nil)
 	test("a;bc:a", false, false, false, "a_bc", "a", nil)
@@ -35,7 +36,9 @@ func (s *simpleKeyTest) TestParse(is is.Is) {
 	test("aa:aa", false, true, false, "minecraft", "aa_aa", nil)
 	test("aa/aa", false, true, false, "minecraft", "aa/aa", nil)
 	test("aa/aa", false, false, false, "minecraft", "aa/aa", nil)
+	test("aa.aa", false, false, false, "minecraft", "aa.aa", nil)
 	test("a/a:b", false, false, false, "a_a", "b", nil)
+	test("a.a:b", false, false, false, "a_a", "b", nil)
 
 	test("aa:", false, false, false, "", "", ErrTrailingSep)
 	test("aa:", true, false, false, "", "", ErrTrailingSep)
