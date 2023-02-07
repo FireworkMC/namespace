@@ -64,7 +64,7 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 
 	} else if l > maxLength {
 		return "", "", ErrTooLong
-	} else if v[l-1] == ':' {
+	} else if v[l-1] == ':' && !noSeparator {
 		return "", "", ErrTrailingSep
 	}
 

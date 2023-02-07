@@ -17,7 +17,7 @@ func (s *simpleKeyTest) TestParse(is is.Is) {
 		ns2, k2, err2 := parseNSK(inp, strict, noSeparator, nsOnly)
 		is.Err(err2, err, "Expected error to be %v got %v", err, err2)
 		is(ns2 == ns, "Expected ns to be %#v got %#v", ns, ns2)
-		is(k2 == key, "Expected key to be %d got %d", key, k2)
+		is(k2 == key, "Expected key to be %#v got %#v", key, k2)
 	}
 
 	test("minecraft:air", false, false, false, "minecraft", "air", nil)
@@ -29,6 +29,9 @@ func (s *simpleKeyTest) TestParse(is is.Is) {
 	test("a;bc:a/a", false, false, false, "a_bc", "a/a", nil)
 	test("a/bc:a", false, false, false, "a_bc", "a", nil)
 	test("a;:v/a", false, false, false, "a_", "v/a", nil)
+
+	test("a:", false, true, false, "minecraft", "a_", nil)
+	test("a::", false, true, false, "minecraft", "a__", nil)
 
 	test("aa:aa", false, true, true, "aa_aa", "", nil)
 	test("aa:aa", false, false, true, "aa_aa", "", nil)

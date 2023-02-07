@@ -46,9 +46,10 @@ var namespaces = syncMap[string, *ns]{
 	},
 }
 
-// NS a namespace.
+// NS is a namespace.
 // A namespace can only contain digits, lowercase letters, underscores and hyphens.
-// To compare namespaces use `==` operator directly (not on the pointer value) or use the Equal method.
+//
+// To compare namespaces use `==` operator directly (not on the pointer value) or use the [NS.Equal] method.
 type NS struct{ ns *ns }
 
 type ns struct {
@@ -56,7 +57,7 @@ type ns struct {
 	keys *syncMap[string, *nsk]
 }
 
-// Equal returns if `n` is equal to `n2`
+// Equal returns if this namespace and the given namespace are equal.
 func (n NS) Equal(n2 NS) bool { return n.ns == n2.ns }
 
 // IsNil returns if this nsk is nil.
@@ -64,22 +65,35 @@ func (n NS) Equal(n2 NS) bool { return n.ns == n2.ns }
 func (n NS) IsNil() bool { return n.ns == nil }
 
 // Key creates a new key inside this namespace.
-// This panics if the length of the key is larger than `maxLength`.
+// All invalid characters in the will be replaced with an underscore.
+//
+// This panics if the length of the key is larger than [MaxLength] or is zero.
 // If [NS.IsNil] returns true, this will panic.
 func (n NS) Key(k string) NSK {
 	if n.ns == nil {
 		panic(ErrNil)
 	}
 
+	if nsk, ok := n.ns.keys.Get(k); ok {
+		return NSK{nsk}
+	}
+
 	_, k, _ = parseNSK(k, false, true, false)
 	return NSK{n.ns.keys.GetOrCreate(k)}
 }
 
-// ParseKey parses the given string and returns a key if it is a valid key.
-// If the namespace is nil, the default namespace will be used.
+// ParseKey creates a new key inside this namespace.
+// Unlike [NS.Key], this will return an error if any invalid characters are encountered.
+//
+// This returns an error if the length of the key is larger than [MaxLength] or is zero
+// If [NS.IsNil] returns true, this will return [ErrNil].
 func (n NS) ParseKey(k string) (nsk NSK, err error) {
 	if n.ns == nil {
 		return NSK{}, ErrNil
+	}
+
+	if nsk, ok := n.ns.keys.Get(k); ok {
+		return NSK{nsk}, nil
 	}
 
 	_, k, err = parseNSK(k, true, true, false)
@@ -95,7 +109,7 @@ func (n *NS) MarshalText() (text []byte, err error) { return []byte(n.String()),
 
 // UnmarshalText implements encoding.TextUnmarshaler
 func (n *NS) UnmarshalText(text []byte) (err error) {
-	*n, err = ParseNamespace(string(text))
+	*n, err = ParseNamespace(string(text), true)
 	return
 }
 
@@ -107,9 +121,10 @@ func (n NS) String() string {
 	return n.ns.name
 }
 
-// NSK a namespaced key.
+// NSK is a namespaced key.
 // A namespace can only contain digits, lowercase letters, underscores, hyphens, forward slash and dots.
-// To compare namespaces use `==` operator directly (not on the pointer value) or use the Equal method.
+//
+// To compare namespaces use `==` operator directly (not on the pointer value) or use the [NSK.Equal] method.
 type NSK struct{ nsk *nsk }
 
 type nsk struct {
@@ -117,7 +132,7 @@ type nsk struct {
 	key, full string
 }
 
-// Equal returns if `n` is equal to `n2`
+// Equal returns if this namespaced key is equal to the given namespaced key.
 func (n NSK) Equal(n2 NSK) bool { return n.nsk == n2.nsk }
 
 // IsNil returns if this nsk is nil.
@@ -134,7 +149,8 @@ func (n NSK) Namespace() NS {
 	return n.nsk.ns
 }
 
-// Key gets the key part of the namespaced key (the part after the ':')
+// Key gets the key part of the namespaced key (the part after the ':').
+// If the namespaced key is nil, this returns an empty string.
 func (n NSK) Key() string {
 	if n.nsk == nil {
 		return ""
@@ -160,18 +176,18 @@ func (n NSK) String() string {
 }
 
 // Namespace creates a new namespace from the given string.
-// This panics if `v` is longer than 200 characters.
+// This panics if the length of the namespace is larger than [MaxLength] or is zero.
 func Namespace(v string) NS {
-	ns, _, err := parseNSK(v, false, true, true)
+	ns, err := ParseNamespace(v, false)
 	if err != nil {
 		panic(err)
 	}
-	return NS{namespaces.GetOrCreate(ns)}
+	return ns
 }
 
 // ParseNamespace creates a new namespace
-func ParseNamespace(v string) (NS, error) {
-	ns, _, err := parseNSK(v, true, true, true)
+func ParseNamespace(v string, strict bool) (NS, error) {
+	ns, _, err := parseNSK(v, strict, true, true)
 	if err != nil {
 		return NS{}, err
 	}
@@ -180,7 +196,7 @@ func ParseNamespace(v string) (NS, error) {
 }
 
 // Key creates a new key.
-// This panics if len(v) > 200 or len(v) == 0.
+// This panics if the length of the key is larger than [MaxLength] or is zero.
 func Key(v string) NSK {
 	ns, k, err := parseNSK(v, false, false, false)
 	if err != nil {
