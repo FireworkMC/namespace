@@ -164,7 +164,7 @@ func (n *NSK) MarshalText() (text []byte, err error) { return []byte(n.String())
 
 // UnmarshalText implements encoding.TextUnmarshaler
 func (n *NSK) UnmarshalText(text []byte) (err error) {
-	*n, err = ParseKey(string(text))
+	*n, err = ParseKey(string(text), true)
 	return
 }
 
@@ -176,17 +176,27 @@ func (n NSK) String() string {
 }
 
 // Namespace creates a new namespace from the given string.
+//
 // This panics if the length of the namespace is larger than [MaxLength] or is zero.
-func Namespace(v string) NS {
-	ns, err := ParseNamespace(v, false)
+// All invalid characters in the namespace are replaced with underscores.
+func Namespace(namespace string) NS {
+	ns, err := ParseNamespace(namespace, false)
 	if err != nil {
 		panic(err)
 	}
 	return ns
 }
 
-// ParseNamespace creates a new namespace
+// ParseNamespace creates a new namespace from the given string.
+//
+// This returns an error if the length of the namespace is larger than [MaxLength] or is zero.
+// If strict mode is enabled, this returns an error when it encounters an invalid character.
+// Otherwise, this replaces all invalid characters with underscores.
 func ParseNamespace(v string, strict bool) (NS, error) {
+	if ns, ok := namespaces.Get(v); ok {
+		return NS{ns}, nil
+	}
+
 	ns, _, err := parseNSK(v, strict, true, true)
 	if err != nil {
 		return NS{}, err
@@ -195,19 +205,25 @@ func ParseNamespace(v string, strict bool) (NS, error) {
 	return NS{namespaces.GetOrCreate(ns)}, nil
 }
 
-// Key creates a new key.
+// Key creates a new namespaced key from the given string.
+//
 // This panics if the length of the key is larger than [MaxLength] or is zero.
-func Key(v string) NSK {
-	ns, k, err := parseNSK(v, false, false, false)
+// All invalid characters in the namespaced key are replaced with underscores.
+func Key(namespacedKey string) NSK {
+	nsk, err := ParseKey(namespacedKey, false)
 	if err != nil {
 		panic(err)
 	}
-	return NSK{namespaces.GetOrCreate(ns).keys.GetOrCreate(k)}
+	return nsk
 }
 
-// ParseKey parses a key
-func ParseKey(v string) (NSK, error) {
-	ns, k, err := parseNSK(v, true, false, false)
+// ParseKey creates a new namespaced key from the given string.
+//
+// This returns an error if the length of the key is larger than [MaxLength] or is zero.
+// If strict mode is enabled, this returns an error when it encounters an invalid character.
+// Otherwise, this replaces all invalid characters with underscores.
+func ParseKey(namespacedKey string, strict bool) (NSK, error) {
+	ns, k, err := parseNSK(namespacedKey, strict, false, false)
 	if err != nil {
 		return NSK{}, err
 	}

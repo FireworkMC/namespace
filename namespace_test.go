@@ -13,7 +13,7 @@ func TestNamespace(t *testing.T) { is.Suite(t, &namespaceTest{}) }
 func (n *namespaceTest) TestNamespace(is is.Is) {
 	_, err := ParseNamespace("a/b", true)
 	is.Err(err, ErrInvalidChar, "Expected ParseNamespace to return an error")
-	_, err = ParseKey("a/b:c")
+	_, err = ParseKey("a/b:c", true)
 	is.Err(err, ErrInvalidChar, "Expected ParseKey to return an error")
 
 	ns, err := ParseNamespace("minecraft", true)
@@ -22,7 +22,7 @@ func (n *namespaceTest) TestNamespace(is is.Is) {
 	k1, k2 := Default.Key("air"), Key("minecraft:air")
 	is(k1 == k2, "keys should be equal")
 
-	k3, err := ParseKey("minecraft:air")
+	k3, err := ParseKey("minecraft:air", true)
 	is.Err(err, nil, "Expected error to be nil")
 	is(k1 == k3, "keys should be equal")
 
