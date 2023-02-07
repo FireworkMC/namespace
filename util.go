@@ -10,18 +10,25 @@ type syncMap[K comparable, V any] struct {
 	New func(K) V
 }
 
-func (n *syncMap[K, V]) Get(v K) V {
-	n.mux.RLock()
-	ns, ok := n.v[v]
-	n.mux.RUnlock()
+func (s *syncMap[K, V]) Get(key K) (value V, exists bool) {
+	s.mux.RLock()
+	ns, ok := s.v[key]
+	s.mux.RUnlock()
+	return ns, ok
+}
+
+func (s *syncMap[K, V]) GetOrCreate(key K) V {
+	s.mux.RLock()
+	ns, ok := s.v[key]
+	s.mux.RUnlock()
 	if !ok {
-		n.mux.Lock()
-		ns, ok = n.v[v]
+		s.mux.Lock()
+		ns, ok = s.v[key]
 		if !ok {
-			ns = n.New(v)
-			n.v[v] = ns
+			ns = s.New(key)
+			s.v[key] = ns
 		}
-		n.mux.Unlock()
+		s.mux.Unlock()
 	}
 
 	return ns

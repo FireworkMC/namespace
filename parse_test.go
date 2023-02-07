@@ -1,7 +1,6 @@
 package namespace
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
@@ -16,7 +15,7 @@ func (s *simpleKeyTest) TestParse(is is.Is) {
 	test := func(inp string, strict, noSeparator, nsOnly bool, ns, key string, err error) {
 		is.T().Helper()
 		ns2, k2, err2 := parseNSK(inp, strict, noSeparator, nsOnly)
-		is(errors.Is(err, err2), "Expected error to be %v got %v", err, err2)
+		is.Err(err2, err, "Expected error to be %v got %v", err, err2)
 		is(ns2 == ns, "Expected ns to be %#v got %#v", ns, ns2)
 		is(k2 == key, "Expected key to be %d got %d", key, k2)
 	}
@@ -47,5 +46,15 @@ func (s *simpleKeyTest) TestParse(is is.Is) {
 	test("", true, false, true, defaultNamespace, "", nil)
 
 	test("a/a:a", true, false, false, "", "", ErrInvalidChar)
+	test("a:a:a", true, false, false, "", "", ErrInvalidChar)
+
+	test("a:a", true, false, true, "", "", ErrInvalidChar)
+
+	test(string([]byte{'a', ':', 0}), true, false, false, "", "", ErrInvalidChar)
+	test(string([]byte{'a', ':', 255}), true, false, false, "", "", ErrInvalidChar)
+
+	test("a:𐍈", true, false, false, "", "", ErrInvalidChar)
+	test("a:𐍈", false, false, false, "a", "_", nil)
+
 	test(strings.Repeat("a", maxLength+1), true, false, false, "", "", ErrTooLong)
 }

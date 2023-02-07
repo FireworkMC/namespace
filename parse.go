@@ -1,29 +1,46 @@
 package namespace
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/yehan2002/errors"
 )
 
 const maxLength = 200
 const defaultNamespace = "minecraft"
+const validChars = "abcdefghijklmnopqrstuvwxyz1234567890-_"
+const upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var translate [unicode.MaxASCII + 1]rune = func() (table [unicode.MaxASCII + 1]rune) {
-	for i := rune(0); i <= unicode.MaxASCII; i++ {
-		switch {
-		case unicode.IsLower(i),
-			unicode.IsDigit(i),
-			i == '-',
-			i == '_':
-			table[i] = i
+	for _, char := range validChars {
+		table[char] = char
+	}
 
-		case unicode.IsUpper(i):
-			table[i] = unicode.ToLower(i)
-		default:
+	for _, char := range upperChars {
+		table[char] = unicode.ToLower(char)
+	}
+
+	for i := range table {
+		if table[i] == 0 {
 			table[i] = utf8.RuneError
 		}
 	}
+
+	return
+}()
+
+// validBytes is a array of bytes in which validBytes[r] == r for all valid
+// bytes in a namespace/namespaced key (except . and /).
+var validBytes [256]byte = func() (table [256]byte) {
+	for _, char := range []byte(validChars) {
+		table[char] = char
+	}
+
+	table[0] = 255
+
 	return
 }()
 
@@ -36,9 +53,6 @@ var translate [unicode.MaxASCII + 1]rune = func() (table [unicode.MaxASCII + 1]r
 func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err error) {
 	var sep int
 	var invalid bool
-
-	if len(v) > maxLength {
-	}
 
 	if l := len(v); l == 0 {
 		// return default namespace for empty string if we only need a namespace
@@ -61,20 +75,20 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 
 	// fast path. iterates over each character in the string without modifying it.
 	var i int
-	var char rune
-	for i, char = range v {
-		if r := translate[char&0x7f]; r == char {
+	var charByte byte
+	for i, charByte = range []byte(v) {
+		switch charByte {
+		case validBytes[charByte]:
+			// char is a valid character.
 			continue
-		}
-
-		// first ':' separates the namespace and the key
-		if char == ':' && sep == 0 && !noSeparator {
-			sep = i
-			continue
-		}
-
-		// the `/` and `.` characters are only allowed in the key.
-		if char == '/' || char == '.' {
+		case ':':
+			// first ':' separates the namespace and the key
+			if sep == 0 && !noSeparator {
+				sep = i
+				continue
+			}
+		case '/', '.':
+			// the `/` and `.` characters are only allowed in the key.
 			if sep != 0 || (noSeparator && !nsOnly) {
 				continue
 			}
@@ -88,16 +102,16 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 					continue
 				}
 			}
-
 		}
 
 		invalid = true
 		break
 	}
 
+	var char rune
 	if invalid {
 		if strict {
-			return "", "", ErrInvalidChar
+			return "", "", getCharError(v, i, noSeparator)
 		}
 
 		// create a new string builder and copy the string we already validated
@@ -117,10 +131,10 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 
 			// handle replacing the invalid characters
 			if char > unicode.MaxASCII || replaced == utf8.RuneError {
+				replaced = '_'
+
 				switch char {
 				case ':':
-					replaced = '_'
-
 					// if this is the first ':' we encountered
 					// it is valid and separates the namespace and key
 					if sep == 0 && !noSeparator {
@@ -129,15 +143,10 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 					}
 
 				case '/', '.':
-					replaced = '_'
-
 					// `/` is allowed in keys
 					if sep != 0 || noSeparator && !nsOnly {
 						replaced = char
 					}
-
-				default:
-					replaced = '_'
 				}
 			}
 
@@ -161,4 +170,25 @@ func parseNSK(v string, strict, noSeparator, nsOnly bool) (ns, key string, err e
 	}
 
 	return defaultNamespace, v, nil
+}
+
+// getCharError returns [ErrInvalidChar] wrapped with more information about the error that
+// occurred.
+func getCharError(v string, i int, inNamespace bool) error {
+	invalidChar, _ := utf8.DecodeRuneInString(v[i:])
+	var msg string
+
+	if invalidChar == '/' || invalidChar == '.' {
+		msg = fmt.Sprintf(`%q is not allowed in a key`, invalidChar)
+	} else if invalidChar == ':' {
+		if inNamespace {
+			msg = `":" is not allowed in a namespace`
+		} else {
+			msg = `found multiple ":" characters`
+		}
+	} else {
+		msg = fmt.Sprintf("invalid character %q (%c)", invalidChar, invalidChar)
+	}
+
+	return errors.CauseStr(ErrInvalidChar, msg)
 }

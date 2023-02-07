@@ -35,3 +35,12 @@ func (n *namespaceTest) TestNamespace(is is.Is) {
 	is(ns == k3.Namespace(), "Expected namespace to be equal")
 
 }
+
+func BenchmarkParseNSK(b *testing.B) {
+	k := "namespace_name:a_key_with_a_really_long_name"
+	b.ReportAllocs()
+	b.SetBytes(int64(len(k)))
+	for i := 0; i < b.N; i++ {
+		parseNSK(k, false, false, false)
+	}
+}

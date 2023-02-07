@@ -72,7 +72,7 @@ func (n NS) Key(k string) NSK {
 	}
 
 	_, k, _ = parseNSK(k, false, true, false)
-	return NSK{n.ns.keys.Get(k)}
+	return NSK{n.ns.keys.GetOrCreate(k)}
 }
 
 // ParseKey parses the given string and returns a key if it is a valid key.
@@ -87,7 +87,7 @@ func (n NS) ParseKey(k string) (nsk NSK, err error) {
 		return NSK{}, err
 	}
 
-	return NSK{n.ns.keys.Get(k)}, nil
+	return NSK{n.ns.keys.GetOrCreate(k)}, nil
 }
 
 // MarshalText implements encoding.TextMarshaler
@@ -166,7 +166,7 @@ func Namespace(v string) NS {
 	if err != nil {
 		panic(err)
 	}
-	return NS{namespaces.Get(ns)}
+	return NS{namespaces.GetOrCreate(ns)}
 }
 
 // ParseNamespace creates a new namespace
@@ -176,7 +176,7 @@ func ParseNamespace(v string) (NS, error) {
 		return NS{}, err
 	}
 
-	return NS{namespaces.Get(ns)}, nil
+	return NS{namespaces.GetOrCreate(ns)}, nil
 }
 
 // Key creates a new key.
@@ -186,7 +186,7 @@ func Key(v string) NSK {
 	if err != nil {
 		panic(err)
 	}
-	return NSK{namespaces.Get(ns).keys.Get(k)}
+	return NSK{namespaces.GetOrCreate(ns).keys.GetOrCreate(k)}
 }
 
 // ParseKey parses a key
@@ -195,5 +195,5 @@ func ParseKey(v string) (NSK, error) {
 	if err != nil {
 		return NSK{}, err
 	}
-	return NSK{namespaces.Get(ns).keys.Get(k)}, nil
+	return NSK{namespaces.GetOrCreate(ns).keys.GetOrCreate(k)}, nil
 }
